@@ -708,3 +708,41 @@ if __name__ == "__main__":
     if platform != "emscripten" and not run_tests():
         raise SystemExit(1)
     run_site()
+name: Deploy Workout Goal Planner
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: github-pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Install Drafter
+        run: python -m pip install -r requirements.txt
+      - name: Test and compile the Drafter site
+        run: |
+          python -m drafter main.py --compile --production --output-directory _site
+          touch _site/.nojekyll
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: _site
+      - name: Publish to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
